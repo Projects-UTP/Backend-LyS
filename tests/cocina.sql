@@ -9,10 +9,10 @@ INSERT INTO public.empleados(usuario_id,local_id,rol) VALUES
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE p jsonb;s jsonb;r jsonb;id uuid;anulable uuid;pago uuid; BEGIN
  PERFORM set_config('request.jwt.claims','{"sub":"ae000000-0000-4000-8000-000000000001"}',true);
- p:=public.abrir_pedido_mesa((SELECT id FROM public.mesas WHERE numero=1 LIMIT 1),gen_random_uuid());id:=(p->>'id')::uuid;
+ p:=public.abrir_pedido_mesa((SELECT m.id FROM public.mesas m WHERE numero=1 LIMIT 1),gen_random_uuid());id:=(p->>'id')::uuid;
  p:=public.editar_pedido_mesa(id,1,'[{"product_id":"ba000000-0000-4000-8000-000000000002","quantity":1,"observaciones":"Papas aparte"}]','Sin sal','Toma inicial');
  p:=public.enviar_pedido_caja(id,2);
- p:=public.abrir_pedido_mesa((SELECT id FROM public.mesas WHERE numero=2 LIMIT 1),gen_random_uuid());anulable:=(p->>'id')::uuid;
+ p:=public.abrir_pedido_mesa((SELECT m.id FROM public.mesas m WHERE numero=2 LIMIT 1),gen_random_uuid());anulable:=(p->>'id')::uuid;
  p:=public.editar_pedido_mesa(anulable,1,'[{"product_id":"ba000000-0000-4000-8000-000000000002","quantity":1}]','','Toma inicial');
  p:=public.enviar_pedido_caja(anulable,2);
  PERFORM set_config('request.jwt.claims','{"sub":"ae000000-0000-4000-8000-000000000003"}',true);
