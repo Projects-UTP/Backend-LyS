@@ -36,3 +36,4 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$migration"
           done
       - run: psql -v ON_ERROR_STOP=1 -f tests/locales.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/catalogo.sql
