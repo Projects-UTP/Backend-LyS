@@ -1,0 +1,31 @@
+BEGIN;
+INSERT INTO auth.users VALUES('ab100000-0000-4000-8000-000000000001'),('ab100000-0000-4000-8000-000000000002');
+INSERT INTO public.empleados(usuario_id,local_id,rol) VALUES('ab100000-0000-4000-8000-000000000001','caba0000-0000-4000-8000-000000000001','MOZO'),('ab100000-0000-4000-8000-000000000002','caba0000-0000-4000-8000-000000000001','COCINA');
+-- Incluso una política permisiva futura no debe abrir los canales protegidos.
+CREATE POLICY fixture_abierta ON realtime.channels FOR SELECT TO anon,authenticated USING(true);
+CREATE POLICY fixture_abierta_mensajes ON realtime.messages FOR SELECT TO authenticated USING(true);
+CREATE POLICY fixture_publicacion ON realtime.messages FOR INSERT TO authenticated WITH CHECK(true);
+GRANT INSERT ON realtime.messages TO authenticated;
+SELECT set_config('realtime.channel_name','lys-operativo:caba0000-0000-4000-8000-000000000001:MOZO',true);
+SET LOCAL ROLE anon;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM realtime.channels WHERE pattern='lys-operativo:%') THEN RAISE EXCEPTION 'Anónimo se suscribe'; END IF; END $$;
+RESET ROLE;
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE p jsonb; BEGIN
+ PERFORM set_config('request.jwt.claims','{"sub":"ab100000-0000-4000-8000-000000000001"}',true);
+ IF(SELECT count(*) FROM realtime.channels WHERE pattern='lys-operativo:%')<>1 THEN RAISE EXCEPTION 'Mozo no se suscribe'; END IF;
+ PERFORM set_config('realtime.channel_name','lys-operativo:caba0000-0000-4000-8000-000000000001:COCINA',true);
+ IF EXISTS(SELECT 1 FROM realtime.channels WHERE pattern='lys-operativo:%') THEN RAISE EXCEPTION 'Mozo cruza rol'; END IF;
+ PERFORM set_config('realtime.channel_name','lys-operativo:ffffffff-ffff-4fff-8fff-ffffffffffff:MOZO',true);
+ IF EXISTS(SELECT 1 FROM realtime.channels WHERE pattern='lys-operativo:%') THEN RAISE EXCEPTION 'Mozo cruza local'; END IF;
+ PERFORM set_config('realtime.channel_name','lys-operativo:malformado:MOZO',true);
+ IF EXISTS(SELECT 1 FROM realtime.channels WHERE pattern='lys-operativo:%') THEN RAISE EXCEPTION 'Canal inválido'; END IF;
+ BEGIN PERFORM realtime.publish('lys-operativo:caba0000-0000-4000-8000-000000000001:MOZO','pedido_actualizado','{}'); RAISE EXCEPTION 'Cliente ejecuta publish privado'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN INSERT INTO realtime.messages(channel_name,event_name,payload) VALUES('lys-operativo:caba0000-0000-4000-8000-000000000001:MOZO','pedido_actualizado','{}'); RAISE EXCEPTION 'Cliente falsifica evento'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ p:=public.abrir_pedido_mesa((SELECT id FROM public.mesas WHERE numero=1 LIMIT 1),gen_random_uuid());
+ IF NOT EXISTS(SELECT 1 FROM realtime.messages WHERE payload->>'id'=p->>'id' AND channel_name LIKE '%:MOZO') THEN RAISE EXCEPTION 'Trigger no publica a mozo'; END IF;
+ IF EXISTS(SELECT 1 FROM realtime.messages WHERE payload ?| ARRAY['contacto_nombre','contacto_celular','direccion','total','acceso_hash']) THEN RAISE EXCEPTION 'Evento expone datos privados'; END IF;
+ PERFORM set_config('request.jwt.claims','{"sub":"ab100000-0000-4000-8000-000000000002"}',true);
+ IF EXISTS(SELECT 1 FROM realtime.messages) THEN RAISE EXCEPTION 'Cocina recibe impagado u otro rol'; END IF;
+END $$;
+ROLLBACK;
