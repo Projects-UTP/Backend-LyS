@@ -41,3 +41,4 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/cotizacion.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/pedidos.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/mesas.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/mozos.sql
