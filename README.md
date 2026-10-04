@@ -2,6 +2,8 @@
 
 [Mesas, roles y provisionamiento seguro](docs/mesas-roles.md).
 
+[Pedidos presenciales, revisión y auditoría](docs/pedidos-presenciales.md).
+
 Backend de Leñas y Sabores: PostgreSQL, Auth, Realtime, funciones, RLS y almacenamiento privado mediante InsForge.
 
 El proyecto **LYS** está creado y vinculado localmente. Ver [configuración de InsForge](docs/insforge.md) y leer [AGENTS.md](AGENTS.md) antes de trabajar.
