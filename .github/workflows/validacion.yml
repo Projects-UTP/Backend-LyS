@@ -44,3 +44,4 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/mozos.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/pagos.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/cocina.sql
+      - run: bash tests/concurrencia.sh
