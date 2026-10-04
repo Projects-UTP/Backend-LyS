@@ -33,9 +33,11 @@ DO $$ DECLARE ids uuid[]:='{}';p jsonb;s jsonb;r jsonb;repetido jsonb;clave uuid
  BEGIN PERFORM public.registrar_pago(ids[i],3,(s->>'id')::uuid,metodo,CASE WHEN metodo='EFECTIVO' THEN 20 ELSE NULL END,NULL,gen_random_uuid(),true); RAISE EXCEPTION 'Doble cobro'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  END LOOP;
  s:=public.resumen_caja((s->>'id')::uuid);
- IF (s->>'total_ventas')::numeric<>79.60 OR(s->>'efectivo_esperado')::numeric<>69.90 OR(s->'ventas'->>'PLIN')::numeric<>19.90 THEN RAISE EXCEPTION 'Resumen incorrecto'; END IF;
+ IF (s->>'total_ventas')::numeric<>79.60 OR(s->>'efectivo_esperado')::numeric<>69.90 OR(s->>'total_esperado')::numeric<>129.60 OR(s->'ventas'->>'PLIN')::numeric<>19.90 THEN RAISE EXCEPTION 'Resumen incorrecto'; END IF;
+ IF NOT(public.consultar_orden_operativa(ids[1]) ? 'cliente') THEN RAISE EXCEPTION 'Caja no recibe metadatos individuales'; END IF;
  BEGIN UPDATE public.empleados SET rol='ADMINISTRADOR'; RAISE EXCEPTION 'Caja cambia permisos'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM set_config('request.jwt.claims','{"sub":"ad000000-0000-4000-8000-000000000001"}',true);
+ IF public.consultar_orden_operativa(ids[1]) ? 'cliente' THEN RAISE EXCEPTION 'Mozo recibe contacto de caja'; END IF;
  BEGIN PERFORM public.registrar_pago(ids[5],3,(s->>'id')::uuid,'YAPE',NULL,NULL,gen_random_uuid(),true); RAISE EXCEPTION 'Mozo aprueba pago'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.editar_pedido_mesa(ids[1],4,'[{"product_id":"ba000000-0000-4000-8000-000000000002","quantity":2}]','','Corrección indebida'); RAISE EXCEPTION 'Mozo edita pagado'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  PERFORM set_config('request.jwt.claims','{"sub":"ad000000-0000-4000-8000-000000000003"}',true);
