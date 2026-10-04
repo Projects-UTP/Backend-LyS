@@ -1,0 +1,7 @@
+{
+  "name": "backend-lys",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test tests/*.test.mjs", "lint": "node --test tests/*.test.mjs" },
+  "engines": { "node": ">=22" }
+}
