@@ -39,3 +39,4 @@ jobs:
       - run: psql -v ON_ERROR_STOP=1 -f tests/catalogo.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/perfiles.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/cotizacion.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/pedidos.sql
