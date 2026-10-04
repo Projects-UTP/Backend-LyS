@@ -10,4 +10,6 @@ Los RPC verifican la revisión optimista y la transición permitida bajo bloqueo
 
 Las referencias de operación rechazan secuencias similares a PAN y etiquetas CVV/CVC/PAN. No existen campos de tarjeta ni conexión a una pasarela. La boleta mantiene PENDIENTE_PROVEEDOR; no se anuncia emisión SUNAT.
 
+La revisión por código humano usa `consultar_pago_administrador(local,codigo)`, solo para administrador activo del local. Muestra pago, estado, importe, fecha y motivo de anulación; nunca capacidad de invitado o datos de contacto. Índices parciales sirven las colas de pago, cocina y listos. La tabla rechaza además números de tarjeta separados por espacios/guiones.
+
 `tests/cocina.sql` usa identidades sintéticas únicamente dentro de una transacción de PostgreSQL efímero de CI y revierte toda la operación.
