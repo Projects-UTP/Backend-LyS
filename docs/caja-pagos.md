@@ -1,0 +1,11 @@
+# ADR — Registro manual de pagos y caja
+
+Caja requiere asignación CAJA/ADMINISTRADOR del local y sesión propia ABIERTA. Apertura idempotente, una sesión activa por cajero/local. Los cobros bloquean primero la sesión y luego el pedido; cierre bloquea sesión y exige revisión actual. Dos cajeras no pueden cobrar la misma orden: bloqueo de pedido, pago único por pedido e idempotencia por actor/intento.
+
+`registrar_pago` no acepta un total del cliente. Reconsulta la orden bloqueada y verifica subtotal de snapshots, descuento y delivery. Delivery con total pendiente se rechaza. Efectivo utiliza numeric(12,2), recibido de dos decimales y vuelto exacto. Yape, Plin y TARJETA_POS exigen confirmación explícita del cajero; referencia opcional de hasta 120 caracteres, sin campos PAN/CVV. No se comprueba una transferencia contra una pasarela ni se cobra una tarjeta desde la aplicación. Todo es registro manual autorizado del pago ya recibido.
+
+Pago APROBADO, movimiento VENTA, pedido CONFIRMADO, timestamps y auditoría se guardan en una transacción. Un fallo del libro revierte la operación completa. Reintentar el mismo contenido/intento devuelve el pago; otro intento para orden ya cobrada falla. Frontend debe conservar intento ante incertidumbre, deshabilitar envío concurrente y recuperar el estado del servidor antes de cambiar el contenido.
+
+Resumen agrupa ventas aprobadas por método, total de ventas y efectivo esperado del cajón (monto inicial + efectivo recibido). Anular un registro no acredita una devolución; los fondos anulados se muestran separados y el efectivo recibido no se resta sin una devolución registrada. Se conserva un snapshot al cerrar. Arqueo físico, ingresos/egresos/ajustes manuales y devoluciones no forman parte de este sprint. BOLETA queda preparada con PENDIENTE_PROVEEDOR, sin afirmar emisión SUNAT.
+
+RLS limita sesiones propias (administrador puede revisar su local), pagos a caja/admin y auditoría a administrador. No hay escrituras directas del cliente. Pruebas SQL en PostgreSQL efímero usan identidades sintéticas; no deben provisionarse en Auth de LYS. No se registran cobros de prueba en el proyecto principal.
