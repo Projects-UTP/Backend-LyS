@@ -11,6 +11,7 @@ DO $$ DECLARE p jsonb; r jsonb; items jsonb; BEGIN
  r:=public.abrir_pedido_mesa(current_setting('test.mesa')::uuid,'de000000-0000-4000-8000-000000000001');
  IF p->>'id'<>r->>'id' OR p->>'estado_pedido'<>'BORRADOR' OR p->'mesa'->>'estado'<>'OCUPADA' THEN RAISE EXCEPTION 'Apertura incorrecta'; END IF;
  PERFORM set_config('test.presencial',p->>'id',true);
+ IF jsonb_array_length(public.listar_pedidos_mesa('caba0000-0000-4000-8000-000000000001'))<>1 THEN RAISE EXCEPTION 'Mapa sin orden activa'; END IF;
  BEGIN PERFORM public.abrir_pedido_mesa(current_setting('test.mesa')::uuid,'de000000-0000-4000-8000-000000000002'); RAISE EXCEPTION 'Mesa duplicada'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.enviar_pedido_caja((p->>'id')::uuid,1); RAISE EXCEPTION 'Orden vacía confirmada'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  items:='[{"product_id":"ba000000-0000-4000-8000-000000000001","quantity":2,"observaciones":"Papas aparte"}]';
