@@ -30,10 +30,11 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
-      - run: psql -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon; CREATE ROLE authenticated;'
+      - run: psql -v ON_ERROR_STOP=1 -f tests/bootstrap.sql
       - run: |
           for migration in migrations/*.sql; do
             psql -v ON_ERROR_STOP=1 -f "$migration"
           done
       - run: psql -v ON_ERROR_STOP=1 -f tests/locales.sql
       - run: psql -v ON_ERROR_STOP=1 -f tests/catalogo.sql
+      - run: psql -v ON_ERROR_STOP=1 -f tests/perfiles.sql
