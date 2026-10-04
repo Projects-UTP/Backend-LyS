@@ -15,12 +15,15 @@ DO $$ DECLARE ids uuid[]:='{}';p jsonb;s jsonb;r jsonb;repetido jsonb;clave uuid
  PERFORM set_config('test.fallo_pago',ids[5]::text,true);
  BEGIN PERFORM public.abrir_caja('caba0000-0000-4000-8000-000000000001',50,gen_random_uuid()); RAISE EXCEPTION 'Mozo abre caja'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM set_config('request.jwt.claims','{"sub":"ad000000-0000-4000-8000-000000000002"}',true);
+ BEGIN PERFORM public.abrir_caja('caba0000-0000-4000-8000-000000000001','NaN'::numeric,gen_random_uuid()); RAISE EXCEPTION 'Inicial NaN aceptado'; EXCEPTION WHEN check_violation THEN NULL; END;
  clave:=gen_random_uuid();s:=public.abrir_caja('caba0000-0000-4000-8000-000000000001',50,clave);
  IF s->>'id'<>public.abrir_caja('caba0000-0000-4000-8000-000000000001',50,clave)->>'id' THEN RAISE EXCEPTION 'Apertura no idempotente'; END IF;
  PERFORM set_config('test.sesion_pago',s->>'id',true);
  BEGIN PERFORM public.registrar_pago(ids[1],3,(s->>'id')::uuid,'EFECTIVO',20,NULL,gen_random_uuid(),false); RAISE EXCEPTION 'Pago no confirmado'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.registrar_pago(ids[1],3,(s->>'id')::uuid,'EFECTIVO',19,NULL,gen_random_uuid(),true); RAISE EXCEPTION 'Efectivo insuficiente'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.registrar_pago(ids[1],3,(s->>'id')::uuid,'EFECTIVO',20.001,NULL,gen_random_uuid(),true); RAISE EXCEPTION 'Decimales imprecisos'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ BEGIN PERFORM public.registrar_pago(ids[1],3,(s->>'id')::uuid,'EFECTIVO','NaN'::numeric,NULL,gen_random_uuid(),true); RAISE EXCEPTION 'Recibido NaN aceptado'; EXCEPTION WHEN check_violation THEN NULL; END;
+ IF EXISTS(SELECT 1 FROM public.pagos WHERE pedido_id=ids[1]) OR public.orden_operativa(ids[1])->>'estado_pago'<>'PENDIENTE' THEN RAISE EXCEPTION 'Importe inválido deja pago parcial'; END IF;
  i:=0;
  FOREACH metodo IN ARRAY ARRAY['EFECTIVO','YAPE','PLIN','TARJETA_POS'] LOOP
  i:=i+1;clave:=gen_random_uuid();
